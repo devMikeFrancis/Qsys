@@ -636,24 +636,32 @@ namespace QscQsys
             }
 
             if (!CMonitor.TryEnter(_primaryResponseLock)) return;
-            while (_primaryRxData.ToString().Contains("\x00"))
+
+            try
             {
-                string responseData;
-
-                lock (_primaryParseLock)
+                while (true)
                 {
-                    responseData = _primaryRxData.ToString();
-                    var delimeterPos = responseData.IndexOf("\x00", StringComparison.Ordinal);
-                    responseData = responseData.Substring(0, delimeterPos);
-                    _primaryRxData.Remove(0, delimeterPos + 1);
+                    string responseData = null;
+
+                    lock (_primaryParseLock)
+                    {
+                        var delimeterPos = _primaryRxData.ToString().IndexOf("\x00", StringComparison.Ordinal);
+                        if (delimeterPos < 0)
+                            break;
+
+                        responseData = _primaryRxData.ToString(0, delimeterPos);
+                        _primaryRxData.Remove(0, delimeterPos + 1);
+                    }
+
+                    _logger.PrintLine("Primary response found ** {0} **", responseData);
+
+                    ParseInternalResponse(true, responseData);
                 }
-
-                _logger.PrintLine("Primary response found ** {0} **", responseData);
-
-                ParseInternalResponse(true, responseData);
             }
-
-            CMonitor.Exit(_primaryResponseLock);
+            finally
+            {
+                CMonitor.Exit(_primaryResponseLock);
+            }
         }
 
         private void backupClient_ResponseReceived(object sender, StringEventArgs args)
@@ -664,24 +672,32 @@ namespace QscQsys
             }
 
             if (!CMonitor.TryEnter(_backupResponseLock)) return;
-            while (_backupRxData.ToString().Contains("\x00"))
+
+            try
             {
-                string responseData;
-
-                lock (_backupParseLock)
+                while (true)
                 {
-                    responseData = _backupRxData.ToString();
-                    var delimeterPos = responseData.IndexOf("\x00", StringComparison.Ordinal);
-                    responseData = responseData.Substring(0, delimeterPos);
-                    _backupRxData.Remove(0, delimeterPos + 1);
+                    string responseData = null;
+
+                    lock (_backupParseLock)
+                    {
+                        var delimeterPos = _backupRxData.ToString().IndexOf("\x00", StringComparison.Ordinal);
+                        if (delimeterPos < 0)
+                            break;
+
+                        responseData = _backupRxData.ToString(0, delimeterPos);
+                        _backupRxData.Remove(0, delimeterPos + 1);
+                    }
+
+                    _logger.PrintLine("Backup response found ** {0} **", responseData);
+
+                    ParseInternalResponse(true, responseData);
                 }
-
-                _logger.PrintLine("Backup response found ** {0} **", responseData);
-
-                ParseInternalResponse(false, responseData);
             }
-
-            CMonitor.Exit(_backupResponseLock);
+            finally
+            {
+                CMonitor.Exit(_backupResponseLock);
+            }
         }
 
         private void primaryClient_ConnectedChange(object sender, ModuleFramework.Events.BoolEventArgs args)
