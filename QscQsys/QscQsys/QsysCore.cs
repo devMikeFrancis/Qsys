@@ -691,7 +691,7 @@ namespace QscQsys
 
                     _logger.PrintLine("Backup response found ** {0} **", responseData);
 
-                    ParseInternalResponse(true, responseData);
+                    ParseInternalResponse(false, responseData);
                 }
             }
             finally
