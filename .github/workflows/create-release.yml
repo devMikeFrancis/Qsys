@@ -23,10 +23,11 @@ jobs:
       - name: Check for Module folder
         id: check-module
         run: |
-          if [ -d "Module" ]; then
-            echo "Found Module folder"
+          if [ -d "QscQsys/Module" ]; then
+            echo "Found Module folder at QscQsys/Module"
+            echo "module-path=QscQsys/Module" >> $GITHUB_OUTPUT
             # Check if Module folder has content other than .gitkeep
-            file_count=$(find Module -type f ! -name ".gitkeep" | wc -l)
+            file_count=$(find QscQsys/Module -type f ! -name ".gitkeep" | wc -l)
             if [ "$file_count" -gt 0 ]; then
               echo "module-has-content=true" >> $GITHUB_OUTPUT
               echo "Module folder contains $file_count file(s) (excluding .gitkeep)"
@@ -36,15 +37,15 @@ jobs:
             fi
           else
             echo "module-has-content=false" >> $GITHUB_OUTPUT
-            echo "No Module folder found"
+            echo "No Module folder found at QscQsys/Module"
           fi
 
       - name: Create zip archive of Module folder
         if: steps.check-module.outputs.module-has-content == 'true'
         run: |
-          cd Module
-          zip -r "../${{ env.REPO_NAME }}.${{ env.TAG_NAME }}.zip" . -x ".gitkeep"
-          cd ..
+          cd ${{ steps.check-module.outputs.module-path }}
+          zip -r "../../${{ env.REPO_NAME }}.${{ env.TAG_NAME }}.zip" . -x ".gitkeep"
+          cd ../..
           echo "Created archive: ${{ env.REPO_NAME }}.${{ env.TAG_NAME }}.zip"
 
       - name: Create GitHub Release
